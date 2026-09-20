@@ -90,7 +90,7 @@ public class Converter {
             JsonArray data = new JsonArray();
 
             if (!csvData.isEmpty()) {
-                // Extract column headings (first row)
+                // Extract column headings 
                 String[] headers = csvData.get(0);
                 for (String header : headers) {
                     colHeadings.add(header);
@@ -100,13 +100,12 @@ public class Converter {
                 for (int i = 1; i < csvData.size(); i++) {
                     String[] row = csvData.get(i);
 
-                    // The first column goes into the ProdNums array
+                    // First column
                     prodNums.add(row[0]);
 
-                    // The remaining columns go into a nested array in Data
+                    // Remaining columns
                     JsonArray rowData = new JsonArray();
                     for (int j = 1; j < row.length; j++) {
-                        // Season (index 2) and Episode (index 3) must be integers
                         if (j == 2 || j == 3) {
                             rowData.add(Integer.parseInt(row[j]));
                         } else {
@@ -122,7 +121,7 @@ public class Converter {
             jsonRecord.put("ColHeadings", colHeadings);
             jsonRecord.put("Data", data);
 
-            // Serialize the object to a string
+            // Serialize
             result = Jsoner.serialize(jsonRecord);
         }
         catch (Exception e) {
@@ -140,8 +139,49 @@ public class Converter {
         
         try {
             
-            // INSERT YOUR CODE HERE
+            // Parse the JSON String
+            JsonObject jsonRecord = (JsonObject) Jsoner.deserialize(jsonString);
             
+            // Extract the distinct arrays
+            JsonArray prodNums = (JsonArray) jsonRecord.get("ProdNums");
+            JsonArray colHeadings = (JsonArray) jsonRecord.get("ColHeadings");
+            JsonArray data = (JsonArray) jsonRecord.get("Data");
+            
+            java.io.StringWriter writer = new java.io.StringWriter();
+            CSVWriter csvWriter = new CSVWriter(writer);
+            
+            // Write the header row
+            String[] headers = new String[colHeadings.size()];
+            for (int i = 0; i < colHeadings.size(); i++) {
+                headers[i] = colHeadings.get(i).toString();
+            }
+            csvWriter.writeNext(headers);
+            
+            // Write the data rows
+            for (int i = 0; i < data.size(); i++) {
+                JsonArray rowData = (JsonArray) data.get(i);
+                String[] row = new String[headers.length];
+                
+                // Add ProdNums to the first column
+                row[0] = prodNums.get(i).toString();
+                
+                // Add the remaining columns
+                for (int j = 0; j < rowData.size(); j++) {
+                    String value = rowData.get(j).toString();
+                    
+                    // Episode column
+                    if (j == 2) {
+                        value = String.format("%02d", Integer.parseInt(value));
+                    }
+                    
+                    row[j + 1] = value;
+                }
+                csvWriter.writeNext(row);
+            }
+            
+            // Finalize CSV string
+            csvWriter.close();
+            result = writer.toString();
         }
         catch (Exception e) {
             e.printStackTrace();
