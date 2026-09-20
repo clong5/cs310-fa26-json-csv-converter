@@ -78,8 +78,52 @@ public class Converter {
         
         try {
         
-            // INSERT YOUR CODE HERE
-            
+            // Parse the CSV string
+            CSVReader reader = new CSVReader(new java.io.StringReader(csvString));
+            java.util.List<String[]> csvData = reader.readAll();
+            reader.close();
+
+            // Initialize JSON collections
+            JsonObject jsonRecord = new JsonObject();
+            JsonArray prodNums = new JsonArray();
+            JsonArray colHeadings = new JsonArray();
+            JsonArray data = new JsonArray();
+
+            if (!csvData.isEmpty()) {
+                // Extract column headings (first row)
+                String[] headers = csvData.get(0);
+                for (String header : headers) {
+                    colHeadings.add(header);
+                }
+
+                // Extract data rows
+                for (int i = 1; i < csvData.size(); i++) {
+                    String[] row = csvData.get(i);
+
+                    // The first column goes into the ProdNums array
+                    prodNums.add(row[0]);
+
+                    // The remaining columns go into a nested array in Data
+                    JsonArray rowData = new JsonArray();
+                    for (int j = 1; j < row.length; j++) {
+                        // Season (index 2) and Episode (index 3) must be integers
+                        if (j == 2 || j == 3) {
+                            rowData.add(Integer.parseInt(row[j]));
+                        } else {
+                            rowData.add(row[j]);
+                        }
+                    }
+                    data.add(rowData);
+                }
+            }
+
+            // Assemble the final JSON object
+            jsonRecord.put("ProdNums", prodNums);
+            jsonRecord.put("ColHeadings", colHeadings);
+            jsonRecord.put("Data", data);
+
+            // Serialize the object to a string
+            result = Jsoner.serialize(jsonRecord);
         }
         catch (Exception e) {
             e.printStackTrace();
